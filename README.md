@@ -31,3 +31,5 @@
 ### Tutorials
 
 [CS468 -  Geometry Processing Algorithms](http://graphics.stanford.edu/courses/cs468-12-spring/)
+
+CUDA入门：《massively parallel processors》+ CS344 - Intro to Parallel Programming
