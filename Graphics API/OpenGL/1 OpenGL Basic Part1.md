@@ -102,7 +102,7 @@ OpenGL使用着色器的流程如下：
 
 VBO：存储顶点数据的内存区域。将顶点数据（例如位置、颜色、纹理坐标等）以数组的形式存储在显存中，供 GPU 直接访问。<u>本质是字节流</u>。
 
-VAO：需要按照固定的格式编码和解码VBO这个字节流，这就是VAO的作用。VAO定义了一个顶点含有的所有属性的总字节长度，以及按怎样的顺序解读（例如前4*3个字节是位置，之后4*4个字节是顶点色等）。并且由于一个顶点的所有属性长度是固定的，按照这个进行偏移可以读取字节流中第N个顶点的数据
+VAO：需要按照固定的格式编码和解码VBO这个字节流，这就是VAO的作用。VAO定义了一个顶点含有的所有属性的总字节长度，以及按怎样的顺序解读（例如前$4*3$个字节是位置，之后$4*4$个字节是顶点色等）。并且由于一个顶点的所有属性长度是固定的，按照这个进行偏移可以读取字节流中第N个顶点的数据
 
 EBO：就是一组顶点索引，表示绘制用到的顶点有哪些（及其顺序）。
 
@@ -129,6 +129,8 @@ RenderTarget 在 GPU 显存中体现为纹理或渲染缓冲区的内存块。�
 - 一个目标可以被多个缓冲区对象绑定，只有最后一个绑定生效（之前的绑定会被自动解除）
 
 这意味着通常需要尽量保证在一个VBO确实用完之后再载入下一个VBO使用，以避免额外地IO开销。
+
+参考阅读：[zhihu - 深入理解顶点索引（Vertex Indexing）](https://zhuanlan.zhihu.com/p/18248843576)
 
 ### 从uniform变量讲变量类型
 
@@ -621,9 +623,9 @@ OpenGL的Object不存储调用，只存储状态，这可以理解为只Implemen
 
 或者从另一角度理解，基于OpenGL是一个巨大的状态机这个事实，在绑定了VAO之后，VAO会把这个状态机里他关注的state的状态映射到自身，进而这可以理解为，VAO本质是OpenGL状态机中一些状态<mark>VAO解绑时那一时刻状态的“切片”</mark>（在一条时间轴上，OpenGL状态机的状态们总是在变化）。
 
-当然，千言万语不如去看一眼官方文档：[OpenGL 对象](https://www.khronos.org/opengl/wiki/OpenGL_Object)
+此外，兼容模式下 0 号 VAO 会被当做默认的对象，但是核心模式下 0 号 VAO 不被视作对象，此时不应当调用任何修改 VAO 状态的函数。
 
-因此，一个BufferObject可以绑定到多个VAO
+当然，千言万语不如去看一眼官方文档：[OpenGL 对象](https://www.khronos.org/opengl/wiki/OpenGL_Object)
 
 ## More of VBO
 
@@ -634,6 +636,22 @@ OpenGL的Object不存储调用，只存储状态，这可以理解为只Implemen
 进行绘制调用并不要求此绘制命令所依赖的任何缓冲区 DMA 当时都已完成。它仅要求这些 DMA 在 GPU <u>实际执行该绘制命令之前</u>发生。实现可以通过在调用中阻塞直到 DMA 完成来实现这一点。
 
 OpenGL规范的唯一要求是相关实现的外在表现符合规范所述，这意味着OpenGL是一个巨大的黑盒模型
+
+## VAO 与 VBO 的关系
+
+> 参考：[khronos - Vertex_Specification](https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Array_Object)的 Vertex Buffer Object 小节
+
+VAO 确实存有对于 VBO 的引用，但是需要了解更新时机和方式。
+
+`GL_ARRAY_BUFFER`并非 VAO 存有的 State。绑定 VBO 到`GL_ARRAY_BUFFER`并不会引起 VAO 更新，只有在调用`glVertexAttribPointer`的时候才会读取全局变量`GL_ARRAY_BUFFER`上绑定的 VBO 并存储进 VAO。
+
+这意味着 VAO 可以通过顶点属性间接存有多个 VBO 的引用，在一次绘制中绘制多个 VBO，或者说是顶点属性和 VBO 关联。
+
+额外地，将场景中的静态物体的数据合成一个 VBO 上传，实际上就是静态合批。
+
+对于那些因为一些因素不能合批的物体来说，通常一个物体会对应一个 VAO ，因为如果共用 VAO，在运行时对 VAO 进行绑定更新依旧存在不可忽略的开销。在实际的开发中，VAO 的数目可能成千上万。
+
+VAO 数目增多的问题主要集中在每个 VAO 对内存的占用，以及状态切换的开销。
 
 ## Texture与PBO
 

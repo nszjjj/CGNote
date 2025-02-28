@@ -1,6 +1,36 @@
-## DSA
+# Unclassify
 
-DSA (Direct State Access) 是从 OpenGL 4.5 版本开始引入的一套 API，它改变了 OpenGL 管理对象状态的方式，旨在提高性能和简化代码。 在 DSA 之前，OpenGL 使用的是一种基于状态机的 API，需要频繁地绑定和解绑对象才能修改其状态。 DSA 使用命名对象 (named objects) 来表示 OpenGL 对象，例如纹理、缓冲区、帧缓冲区等。 这些对象由一个唯一的整数 ID 来标识。 通过 DSA 可以直接使用这些 ID 来操作对象的状态，而无需绑定它们。
+现代硬件的运行方式与经典的 OpenGL 模型相差甚远，了解更加现代的 OpenGL 的功能是本文关注的重点。
+
+## OpenGL Extension Prefix
+
+| 扩展前缀      | 定义                                     | 功能描述                                          |
+| --------- | -------------------------------------- | --------------------------------------------- |
+| GL_ARB_   | 由OpenGL Architecture Review Board提出的扩展 | 代表正式的标准化扩展，经过审查，常被纳入未来核心OpenGL版本，提供功能增强和性能优化。 |
+| GL_EXT_   | 由多个OpenGL实现供应商共同开发的扩展                  | 提供不在核心规范中的功能，有多个供应商实现，适用于广泛的硬件。               |
+| GL_NV_    | 由NVIDIA公司提出的扩展                         | 针对NVIDIA硬件优化的特定功能，允许访问NVIDIA GPU的独特特性。        |
+| GL_APPLE_ | 由Apple公司提出的扩展                          | 针对Apple平台的特定需求，提供与Mac和iOS优化相关的功能。             |
+| GL_SGIS_  | 由Silicon Graphics, Inc.提出的扩展           | 关注特定图形处理功能的扩展，例如生成mipmap等。                    |
+| GL_INTEL_ | 由英特尔公司提出的扩展                            | 针对英特尔硬件的特定优化和增强功能。                            |
+| GL_KHR_   | 由Khronos Group提出的扩展                    | 反映Khronos对OpenGL的维护和新功能，通常是更新和改进的扩展。          |
+| GL_SUN    | 由Sun Microsystems提出的扩展                 | 主要用于Solaris平台的特定功能和优化。                        |
+| GL_PGI    | 由Portland Group Inc.提出的扩展              | 针对高性能计算和图形的特定功能。                              |
+| GL_OML    | 由Khronos Group提出的OpenML扩展              | 用于移动平台的图形功能，提供与OpenML相关的功能。                   |
+| GL_OVR    | 由Oculus VR提出的扩展                        | 针对虚拟现实应用中使用的特定图形功能。                           |
+| GL_OES    | 由Khronos Group提出的OpenGL ES扩展           | 用于嵌入式系统和移动设备的特定功能，提供与OpenGL ES相关的功能。          |
+| GL_WIN    | 由Microsoft提出的扩展                        | 针对Windows平台的图形功能和特性，例如WGL（Windows OpenGL）。    |
+
+出于很多考量都可能会选择使用扩展，例如：
+
+- 最新功能的引入（最新功能通常未能及时纳入核心规范）
+
+- 针对特定硬件优化
+
+- 向后兼容
+
+- 特定应用需求（尤指游戏，例如MRT）
+
+- 实验性功能
 
 ## Tessellation
 
@@ -28,3 +58,35 @@ GLU细分过时的关键在于它是在CPU端运行的，然后将结果传递�
 ## 带宽
 
 当我们谈论节约带宽，我们在谈论什么？
+
+## 缓冲区视图
+
+OpenGL 4.3 引入了纹理和缓冲区视图，允许创建现有纹理或缓冲区的子集视图，典型的用途是将纹理的某一部分作为新纹理使用
+
+```cpp
+GLuint textureView;
+glGenTextures(1, &textureView);
+glTextureView(textureView, GL_TEXTURE_2D, originalTexture, GL_RGBA8, 0, 1, 0, 1);
+```
+
+## SSO
+
+OpenGL 4.1 引入了 SSO，即 Separate Shader Objects。允许将顶点、片段、几何等着色器单独编译和链接，而不是必须链接成一个完整的程序。
+
+# DSA
+
+参考：[khronos - EXT_direct_state_access](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_direct_state_access.txt)
+
+## 发展背景
+
+DSA (Direct State Access) 是从 OpenGL 4.5 版本开始引入的一套 API，它改变了 OpenGL 管理对象状态的方式，旨在提高性能和简化代码。
+
+在 DSA 之前，OpenGL 使用的是一种基于状态机的 API，需要频繁地绑定和解绑对象才能修改其状态。 DSA 使用命名对象 (named objects) 来表示 OpenGL 对象，例如纹理、缓冲区、帧缓冲区等。 这些对象由一个唯一的整数 ID 来标识。 通过 DSA 可以直接使用这些 ID 来操作对象的状态，而无需绑定它们。
+
+DSA 的改动原因在于现代图形硬件的变化：硬件变的越来越并行，大量的计算单元在一段时间内以不可变状态工作。
+
+并行性能的发挥需要尽量<mark>减少状态切换和同步开销</mark>。因为在并行计算中，状态切换会导致计算单元之间的同步问题，降低性能。这意味着传统 OpenGL 的状态绑定机制在现代硬件上显得过于低效。另一方面，这使得一些可变的东西变成不可变的，OpenGL 服务器处理不可变的对象通常更快。
+
+现代图形 API 专注于增加每帧的绘制调用（将绘制命令插入命令队列），而不是去修改状态来间接影响 GPU 的绘制流程。
+
+# 
