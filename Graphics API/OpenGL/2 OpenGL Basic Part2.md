@@ -730,6 +730,36 @@ glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 当然 FBO 的深度和模版附件本身可以绑纹理，不一定是 RBO。绑纹理的优势在于可以在着色器访问
 
+## Context 概念
+
+OpenGL 本身有 Context 的概念，不过在 LearnOpenGL 的系列文章中并没有体现。因为在使用 GLFW 的时候，该库在管理窗口的同时会自行创建并管理一个与窗口相关联的 Context，因此无需手动管理。此时窗口为 OpenGL 提供了渲染目标。
+
+OpenGL 支持多个Context 切换。特别是在多个窗口渲染的情况下，每个窗口对应一个 Context。不过每个 Context 并非一定要与窗口关联，例如离屏渲染。
+
+此外 Context 的切换具有一定的性能开销，所以尽量避免频繁地切换。离屏渲染时也可以通过 Context 实现，不过就开销而言。通常会选择 FBO 替代。
+
+OpenGL 的各种数据类型中只有一部分类型能够在 Context 之间共享，能够共享的东西需要显式通过代码进行设置。原则上来说 OpenGL 能够共享的东西是纯粹的数据对象，例如 VBO 这种，而[容器对象](https://www.khronos.org/opengl/wiki/OpenGL_Object#Container_objects)（能够将其他对象附加到其上的）则不可以。
+
+Context 的共享，在不同平台的实现是不一样的。例如在 Windows 平台需要使用 WGL (Windows Graphics Library) 来处理与 Windows 窗口系统交互的部分。当然，在使用 GLFW 后，只需要关注 OpenGL 渲染代码本身，而无需关心底层平台相关的窗口管理和上下文创建细节。
+
+## Query Object
+
+> 官方文档：[Khronos - Query_Object](https://www.khronos.org/opengl/wiki/Query_Object)
+
+Query  Object 主要用于性能分析，是一种用于查询 GPU 执行状态或性能数据的机制。
+
+单个对象可以复用，在一次查询中作为一种类似“句柄”的作用，可以在查询完后经由`glGetQueryObjectuiv`查询到某个查询对象的结果。
+
+例如：
+
+- 遮挡查询，其结果表示查询期间有多少片元通过深度测试
+
+- 图元查询，其结果表示在渲染管线中，特别是几何着色器和变换反馈阶段，生成的或写入的图元数量。
+
+- 耗时查询，其结果表示查询范围内所有指令执行完毕所用的时间
+
+注：图元查询，有`GL_PRIMITIVES_GENERATED`和`GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN`两种
+
 # Reference
 
 [1] [khronos - 立方体贴图纹理](https://www.khronos.org/opengl/wiki/Cubemap_Texture) 

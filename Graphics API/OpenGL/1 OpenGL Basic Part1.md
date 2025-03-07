@@ -228,7 +228,7 @@ glBindTexture(GL_TEXTURE_2D, texture2);
 
 接下来对 GPU 视角下的纹理做说明：
 
-前文提到，纹理具体数据的填充要使用`glTexImage2D`（针对2D纹理），它会从字节流按指定类型读取并构建为OpenGL支持的纹理格式，结果会存放到GPU中（此举完成了纹理由内存到显存的输送）。需要注意的是，此过程实际上是异步的，详见[OpenGL Basic Part2](./2 OpenGL Basic Part2.md)中的“CPU与GPU的异步性”一节。
+前文提到，纹理具体数据的填充要使用`glTexImage2D`（针对2D纹理），它会从字节流按指定类型读取并构建为OpenGL支持的纹理格式，结果会存放到GPU中（此举完成了纹理由内存到显存的输送）。需要注意的是，此过程实际上是异步的，详见[4 异步与同步.md](./4 异步与同步.md)一文。
 
 GPU侧的纹理数据的第一个元素对应于纹理图像的左下角。后续元素从左向右穿过纹理图像最低行中的剩余纹素，然后依次穿过纹理图像的较高行。最后一个元素对应于纹理图像的右上角。
 
@@ -609,10 +609,6 @@ FinalIntensity = Attenuation * SpotlightFactor * LightIntensity
 
 > 在LearnOpenGL之外，谈论一些他没提到的东西
 
-## CPU与GPU的异步性
-
-在Texture一小节中提到了Texture传输到GPU的异步性。就此，结合`glFinish()`进行解释：
-
 ## More of VAO
 
 我确信看完LearnOpenGL之后关于VAO、VBO和EBO之间的关系仍不会很清晰，所以我翻了翻一些论坛中的讨论：[StackExchange - Understanding VAO and VBO](https://computergraphics.stackexchange.com/questions/10332/understanding-vao-and-vbo)
@@ -655,4 +651,78 @@ VAO 数目增多的问题主要集中在每个 VAO 对内存的占用，以及�
 
 ## Texture与PBO
 
-# 
+参考：[songho - OpenGL 像素缓冲区对象 (PBO)](https://www.songho.ca/opengl/gl_pbo.html)
+
+PBO（Pixel Buffer Object，像素缓冲对象）是OpenGL中的一种缓冲区对象，仅用于执行像素传输。PBO 通过允许异步 DMA 传输来减少 CPU 的负担，是一种性能优化。
+
+> 官方文档称之为是一种改善应用程序和 OpenGL 之间异步行为的方法
+
+像素传输分为两类：上传（像素解包）和下载（像素打包）。上传是指数据从属于 CPU 的存储空间到属于 GPU 的存储空间。
+
+PBO 做像素传输的操作依赖于两个访问载点：对于上传的操作，会访问绑定到`GL_PIXEL_UNPACK_BUFFER`的缓冲对象，而对于下载则访问绑定到`GL_PIXEL_PACK_BUFFER`的缓冲对象。
+
+就使用而言，含有 PBO 的代码主要是针对`glReadPixels`、`glTexImage2D`或`glTexSubImage2D`做补充。
+
+在未含有 PBO 的流程中，使用`glTexImage2D`或`glTexSubImage2D`将像素数据从CPU上传到纹理。
+
+> 还记得`glTexImage2D`吗？使用它将内存中的字节流构建为 OpenGL 可以识别的纹理对象，并配置好纹理属性，以及上传到 GPU。如果不指定字节数据，则只是分配纹理内存（显存）但是不发生上传
+
+```cpp
+// 假设 width 和 height 是纹理的尺寸
+int width = 512;
+int height = 512;
+
+// 创建 PBO
+GLuint pbo;
+glGenBuffers(1, &pbo);
+glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * 4, nullptr, GL_STREAM_DRAW);
+
+// 填充像素数据
+GLubyte* pixels = new GLubyte[width * height * 4]; // RGBA 格式
+for (int i = 0; i < width * height * 4; i++) {
+    pixels[i] = rand() % 256; // 随机生成像素数据
+}
+
+// 将像素数据上传到 PBO
+glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, width * height * 4, pixels);
+
+// 创建纹理
+GLuint texture;
+glGenTextures(1, &texture);
+glBindTexture(GL_TEXTURE_2D, texture);
+
+// 从 PBO 上传数据到纹理
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+// 解绑与清理
+glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+delete[] pixels;
+```
+
+使用 PBO 的代码并不会避开使用`glTexImage2D`，而是为该函数内部的 `data` 参数为 `0`，表示从当前绑定的 PBO 中读取数据。
+
+这时候可能有人会好奇，上面不是说参数为 0 表示不上传数据只分配空间吗？在参数为 0 的情况下，会查看`GL_PIXEL_UNPACK_BUFFER`是否绑定有数据，如果它绑定了一个有效的PBO，并且PBO中有数据，OpenGL会从PBO中读取数据并上传到纹理，否则仅分配显存空间。
+
+那么 PBO 究竟为客户端干了什么事情而提高效率呢？上面说了是异步 DMA。截取上述参考链接的一张图：
+
+![pbo在纹理传输的作用](D:\CGNote\Graphics%20API\OpenGL\img\with%20or%20without%20pbo.png)
+
+在没有 PBO 的时候数据流动是这样的：
+
+1. 纹理字节流（内存）：源自于从磁盘等介质加载图像数据，可能还要经过一些数据处理
+
+2. OpenGL能识别的纹理数据（内存）：调用 `glTexImage2D` 或 `glTexSubImage2D` 等函数，OpenGL 驱动程序会将纹理数据从 CPU 内存复制到驱动程序管理的内存区域。
+
+3. 纹理对象的区域（显存）：OpenGL 驱动程序会将纹理数据从驱动程序管理的内存区域复制到 GPU 的显存中。
+
+在存在 PBO 的时候数据流动是这样的：
+
+1. 
+
+此外网上的资料表明 PBO 一定会使`glTexImage2D`立即返回（似乎进入命令缓冲的 OpenGL 指令并非所有都是立即返回的，与实现有关）
+
+---
+
+当然，`glTexImage2D`上传行为是异步的，这个放到[4 异步与同步](./4 异步与同步.md)中细说。

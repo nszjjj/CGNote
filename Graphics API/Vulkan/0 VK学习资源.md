@@ -6,4 +6,6 @@
 
 [Github - Vulkan C++ examples and demos](https://github.com/SaschaWillems/Vulkanhttps://github.com/SaschaWillems/Vulkan)，看代码学习
 
+[极客教程 - Vulkan 教程](https://geek-docs.com/vulkan/vulkan-tutorial/vulkan-tutorial-index.html)
+
 通过Mesa3D了解Vulkan的底层：Mesa 3D 是一个开源的图形库，它包含一个 Vulkan 运行时

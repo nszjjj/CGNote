@@ -1,5 +1,7 @@
 # Unclassify
 
+官方标准手册：[The OpenGL® Graphics System : A Specification(Version 4.6 (Core Profile) - May 5, 2022)](https://registry.khronos.org/OpenGL/specs/gl/glspec46.core.pdf)
+
 现代硬件的运行方式与经典的 OpenGL 模型相差甚远，了解更加现代的 OpenGL 的功能是本文关注的重点。
 
 ## OpenGL Extension Prefix
