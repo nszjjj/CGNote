@@ -2,6 +2,8 @@
 
 > 其实也不高级，但是 LearnOpenGL 是这么叫的
 
+当然我写这个的目的是对 LearnOpenGL 进行补充，尽量避免变成简单的笔记
+
 ## 深度
 
 在没有绑定FBO（或者解绑其他FBO之后）任何操作都是在默认FBO上进行的，默认FBO只包含颜色缓冲区、深度缓冲区和模板缓冲区。通常情况下默认FBO的颜色缓冲区映射到屏幕输出。
@@ -696,6 +698,12 @@ vec4 colorSample = texelFetch(screenTextureMS, TexCoords, 3);  // 第4个子样�
 ## AlphaTest与AlphaBlend
 
 ## Order-Independent Transparency
+
+上文在“混合”一节种提到了交错透明度的问题，这是一种源于对物体进行排序然后按顺序渲染的透明度渲染方法产生的问题。实际上这种方法既有性能开销（因为要排序）而且极依赖于排序结果，排序不正确效果就不正确。
+
+OIT，即顺序无关透明度，是一种在光栅化计算机图形学中用于渲染3D场景中透明效果的技术，它不需要按照几何体的排序顺序进行alpha混合。
+
+OIT 的实现也有很多种方式，对于实时渲染来说 Weighted Blended OIT 是一种常见的方式。加权 OIT 的思路是由片元到相机的距离决定权值。
 
 ## RBO 与 FBO
 

@@ -75,6 +75,14 @@ glTextureView(textureView, GL_TEXTURE_2D, originalTexture, GL_RGBA8, 0, 1, 0, 1)
 
 OpenGL 4.1 引入了 SSO，即 Separate Shader Objects。允许将顶点、片段、几何等着色器单独编译和链接，而不是必须链接成一个完整的程序。
 
+## Shader Reflection
+
+即便这是一个在2.0就引入的机制，但是现代的图形程序为了灵活性和拓展性，通常不能忽略它。
+
+OpenGL Shader Reflection 用于在运行时获取着色器程序中 uniform 变量、attribute 变量以及其他接口块的信息，而无需预先知道这些变量的名称或类型。
+
+写引擎时为了灵活性，着色器要传入的信息肯定不能硬编码。在这种情况下，需要着色器的输入进行反射，动态获取输入并在 CPU 侧匹配赋值。也就是说需要约定一些值，通过反射拿到之后比对名称，如果一致的话则把相应的值设置上去。
+
 # DSA
 
 参考：[khronos - EXT_direct_state_access](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_direct_state_access.txt)

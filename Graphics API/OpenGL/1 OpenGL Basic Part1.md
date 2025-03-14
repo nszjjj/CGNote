@@ -711,18 +711,87 @@ delete[] pixels;
 
 在没有 PBO 的时候数据流动是这样的：
 
-1. 纹理字节流（内存）：源自于从磁盘等介质加载图像数据，可能还要经过一些数据处理
+1. 纹理数据字节流（内存）：源自于从磁盘等介质加载图像数据，可能还要经过一些数据处理变成 OpenGL 可识别的格式
 
 2. OpenGL能识别的纹理数据（内存）：调用 `glTexImage2D` 或 `glTexSubImage2D` 等函数，OpenGL 驱动程序会将纹理数据从 CPU 内存复制到驱动程序管理的内存区域。
 
 3. 纹理对象的区域（显存）：OpenGL 驱动程序会将纹理数据从驱动程序管理的内存区域复制到 GPU 的显存中。
 
-在存在 PBO 的时候数据流动是这样的：
-
-1. 
+在存在 PBO 的时候数据流动类似上面，但是第二步时 `glTexImage2D`并不会将数据复制到驱动程序管理的内存，直接在第三步异步 DMA 到显存。相当于少了一次内存拷贝（从CPU控制的内存拷贝到驱动程序控制的内存）
 
 此外网上的资料表明 PBO 一定会使`glTexImage2D`立即返回（似乎进入命令缓冲的 OpenGL 指令并非所有都是立即返回的，与实现有关）
 
 ---
 
 当然，`glTexImage2D`上传行为是异步的，这个放到[4 异步与同步](./4 异步与同步.md)中细说。
+
+## Texture与Buffer Object
+
+纹理和缓冲区对象是两种不同的数据存储和访问机制，二者的数据都位于显存，但它们的设计目的和使用方式有所不同。
+
+|         | 纹理  | 缓冲对象 |
+|:-------:|:---:|:----:|
+| GPU访问方式 | 采样器 | 绑定点  |
+| 格式      | 固定  | 任意   |
+| 插值与过滤   | 支持  | 不支持  |
+
+注：采样器是 GPU 访问纹理的方式，CPU 也可以通过`glGetTexImage`读取纹理进行访问。不过在大多数情况下 IO between CPU and GPU 是有不可忽视的开销的，性能较低。
+
+---
+
+纹理或者缓冲对象都可以存放 GPU 计算的结果，对于写入到纹理来说：
+
+- 在计算着色器中通过 `imageStore` 将数据写入纹理
+
+- 使用 FBO 将计算结果渲染到纹理
+
+如果是存储到缓冲对象的话：
+
+- 使用 SSBO 存放结果，在被传入的情况下着色器（包括但不限于计算着色器）可以直接访问，适合频繁读写或存储大量数据
+
+注：帧缓冲是用于管理渲染目标的对象，它本身并不直接存储数据，而是通过附件（如纹理或渲染缓冲对象）来存储数据，所以帧缓冲不直接作为作为存储计算结果的“缓冲”
+
+---
+
+此外 Image Load/Store 与采样器的比较如下：
+
+|        | 采样器访问        | Image Load/Store      |
+|:------:|:------------:|:---------------------:|
+| 访问方式   | 纹理坐标（uv 坐标）  | 像素坐标（整数坐标，`x`行`y`列这种） |
+| 插值与过滤  | 支持           | 不支持                   |
+| 读写操作   | 只读           | 读写                    |
+| 性能优化   | 针对图形渲染优化     | 针对随机访问优化              |
+| 使用场景   | 图形渲染（贴图、材质等） | 通用计算（GPGPU）           |
+| 同步与一致性 | 自动管理         | 需要手动管理（内存屏障）          |
+
+## Texture与TBO
+
+TBO（Texture Buffer Object） 允许将缓冲区对象（Buffer Object）作为纹理使用，该机制结合了缓冲区对象和纹理的优点，适用于需要处理大量数据且需要随机访问的场景。
+
+- TBO 有大小限制，可以使用``GL_MAX_TEXTURE_BUFFER_SIZE``查询。
+
+- TBO 不支持 mipmapping 和纹理过滤，这意味着无法使用 `glTexParameteri` 来设置过滤参数
+
+- TBO 可以被采样器采样，在着色器中声明`samplerBuffer`类型的采样器，并通过`texelFetch`按整数坐标访问，这意味着不能自动被插值，但是可以手动实现插值算法
+
+- 在一些场合，更推荐使用 SSBO 替代 TBO
+
+原本正常使用 texture 是使用`glBindTexture`给绑定到`GL_TEXTURE_2D`这样的目标上，但是使用 TBO 的话，是绑定到`GL_TEXTURE_BUFFER`
+
+```cpp
+// 创建和填充 TBO 内容
+GLuint buffer;
+glGenBuffers(1, &buffer);
+glBindBuffer(GL_TEXTURE_BUFFER, buffer);
+glBufferData(GL_TEXTURE_BUFFER, size, data, GL_STATIC_DRAW);
+// 创建纹理缓冲区对象
+GLuint texture;
+glGenTextures(1, &texture);
+glBindTexture(GL_TEXTURE_BUFFER, texture);
+// 缓冲区对象与纹理对象关联，并指定内部格式（此处是GL_R32F）
+glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, buffer);
+```
+
+`glBufferData`里传入的数据`data`是要和底下`glTexBuffer`指定的格式对应的。他必须是一个一维数组，这意味着对于二维数据需要自己手动展平，并在访问时自行计算偏移量。那假如指定的数据格式是`GL_RG32F`那传入的数据就得按照 RGRGRGRGRGRG... 的顺序排列
+
+注意：`GL_TEXTURE_BUFFER` 既可以被 `glBindBuffer` 绑定，也可以被 `glBindTexture` 绑定，但这两种绑定方式的作用和目的是不同的。
