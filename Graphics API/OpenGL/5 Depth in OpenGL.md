@@ -69,3 +69,23 @@ void main() {
 [CSDN - Vulkan与OpenGL对比——Vulkan的全新渲染架构](https://blog.csdn.net/u011686167/article/details/122914604)
 
 OpenGL 的架构分为三层：应用层、驱动层、GPU层。实际上先前的文章中已经隐约探寻到了这个架构的雏形，因为总是在关注用户在 CPU 上做了什么，驱动程序做了什么和 GPU 做了什么。
+
+# 开销
+
+参考链接：来自 NV 的 Cass Everitt 与 John McDonald 在 2014 年的 Steam Dev Days 上的讲座，其中谈论了 OpenGL 的一些开销问题
+
+[YouTube - Beyond Porting: How Modern OpenGL Can Radically Reduce Driver Overhead (Steam Dev Days 2014)](https://www.youtube.com/watch?v=-bCeNzgiJ8I)
+
+---
+
+<img src="file:///D:/CGNote/Graphics%20API/OpenGL/img/cost_of_state_changes.jpg" title="" alt="状态切换开销" data-align="center">
+
+节选自上述视频，展示了一些切换的开销。关于开销需要了解到的一些共识包括：
+
+1. 状态信息需要从 CPU 传递给 GPU。
+
+2. 状态切换要等待流水线所有正在进行计算的单位都得工作完（同步开销）
+
+着色器切换会导致重新读取 uniform变量、纹理或buffer绑定
+
+一般来说，render target 和 shader program的切换开销最大，uniform 变量的更新开销最小，vertex buffer 和纹理的切换开销居中
