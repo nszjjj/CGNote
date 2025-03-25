@@ -228,7 +228,7 @@ glBindTexture(GL_TEXTURE_2D, texture2);
 
 接下来对 GPU 视角下的纹理做说明：
 
-前文提到，纹理具体数据的填充要使用`glTexImage2D`（针对2D纹理），它会从字节流按指定类型读取并构建为OpenGL支持的纹理格式，结果会存放到GPU中（此举完成了纹理由内存到显存的输送）。需要注意的是，此过程实际上是异步的，详见[4 异步与同步.md](./4 异步与同步.md)一文。
+前文提到，纹理具体数据的填充要使用`glTexImage2D`（针对2D纹理），它会从字节流按指定类型读取并构建为OpenGL支持的纹理格式，结果会存放到GPU中（此举完成了纹理由内存到显存的输送）。需要注意的是，此过程实际上是异步的，详见[[4 OpenGL 的异步与同步]]一文。
 
 GPU侧的纹理数据的第一个元素对应于纹理图像的左下角。后续元素从左向右穿过纹理图像最低行中的剩余纹素，然后依次穿过纹理图像的较高行。最后一个元素对应于纹理图像的右上角。
 
@@ -578,7 +578,7 @@ $$
 FinalIntensity = Attenuation * SpotlightFactor * LightIntensity
 ```
 
-对于多光源情况，会结合UBO进行绘制，详见[OpenGL Basic Part2](./2 OpenGL Basic Part2.md)的UBO一节。
+对于多光源情况，会结合UBO进行绘制，详见 [[2 OpenGL Basic Part2#UBO]] 的UBO一节。
 
 ### 其他机制细节
 
