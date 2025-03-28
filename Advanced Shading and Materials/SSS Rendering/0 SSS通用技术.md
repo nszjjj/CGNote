@@ -1,6 +1,7 @@
 # Intro
+## Theory Intro
 
-关于次表面散射的理论首先参考RTR4$^{[1]}$，可以在第九章《基于物理的着色》了解到理论基础。
+关于次表面散射的理论首先参考 RTR4 第九章《基于物理的着色》进行了解：[《RTR4》Chapter 9 Physically Based Shading 基于物理的着色](https://www.wolai.com/u2A8QGmD86MZdkpRnSfouQ)
 
 看 RTR4 很容易理解物理层面的理论基础，就是照射到物体表面的光并非全部被反射，根据材质的不同有一定比例的光会进入介质内部，进入介质内部的光线会被介质吸收，如果没有被完全吸收的话剩余的部分就会再度从物体中折射出来。一些非金属的材质具有低散射和低吸收的特性，这使得进入物体内部的光线里经过多次散射和吸收之后折射出来的比例较为明显能够观察到，这种现象就是次表面散射。
 
@@ -19,12 +20,23 @@
 还是按皮肤举例子，人类皮肤具有复杂的微表面结构，如毛孔、皱纹等。然而，光线在皮肤内部的散射距离通常在几毫米到几厘米之间，远大于这些微表面结构的尺寸。因此，在渲染皮肤时，通常会忽略微表面结构的影响，而使用光滑表面的 SSS 模型。当然这是指次表面散射部分可以化简为光滑模型，而表面反射部分还是使用微表面模型。
 
 关于皮肤的渲染可以参考 GPU Gems 3 第 14 章中讲解用于实时渲染真实皮肤的高级技术的内容。
+## Why Thickness Matters
 
-# BSSDF
+如果介质是均匀的，可以认为，shading point 到光源的穿过的介质距离（厚度）决定了散射的表现，并且这个表现本质上是多次散射的宏观体现（当然这就意味着并不是一个精确的数学模型）。
 
-# Approx
+> 后文的很多方法直接或间接用到了厚度（深度），所以才专门提一下这个事情
+
+对于均匀介质，散射系数（scattering coefficient）和吸收系数（absorption coefficient）是恒定的，光线在介质内的衰减和扩散行为遵循Beer-Lambert定律和扩散近似理论。
+
+对于非均匀的介质，可以使用 raymarching 进行累加。
+
+然后就会发现，那不就
+
+# Methods
 
 ## Wrap Lighting
+
+> 效果很廉价
 
 环绕光照（Wrap Lighting）是一种用于模拟光线在物体表面散射的技术，尤其在处理人像时，可以柔化阴影边缘，使光线看起来更加自然和均匀。
 
@@ -39,7 +51,6 @@ I_{warp} = k_d\frac{(N·L)+w}{1+w}
 $$
 
 具体实现代码可以参考引用$^{[3]}$的内容。其本质相当于用$N·L$去调整暗部的颜色，即用漫反射光近似次表面散射光。
-
 ## Depth Mapping
 
 > 用来模拟吸收的，光穿过材质的距离越远，散射和吸收就越多。
@@ -50,7 +61,7 @@ $$
 
 问题：如果模型不是凸的，可能会出现问题。GPU Gems 说可以使用深度剥离（depth peeling）技术来解决这个问题
 
----
+## Render as Volume
 
 厚度只是解决了光线吸收的问题，他可以做背面透光，但是次表面散射效果不止由光线吸收构成。不过可以将厚度映射到一维 LUT，对不同厚度呈现的颜色做预计算，其质量完全取决于 LUT 的生成方式。在永劫无间的技术分享$^{[4]}$中则指出可以分为两部分实现：镜面反射 + 体积渲染。原文如下：
 
@@ -58,19 +69,23 @@ $$
 
 相当于对内部用体积渲染的方法得到一部分光线效果。
 
-# 预积分方法
+## BSSDF
+
+BSDF 本身既可以用于精确方法，也可以用于近似方法。
+## Pre-integrated
+
+
+## Diffusion Approximation
 
 
 
 # Ref
 
-[1] [《RTR4》Chapter 9 Physically Based Shading 基于物理的着色](https://www.wolai.com/u2A8QGmD86MZdkpRnSfouQ)
-
 [2] [GPU Gems - Chapter 16. Real-Time Approximations to Subsurface Scattering](https://developer.nvidia.com/gpugems/gpugems/part-iii-materials/chapter-16-real-time-approximations-subsurface-scattering)
 
 [3] [《GPU Gems》第16章：对次表面散射的实时近似](https://zhuanlan.zhihu.com/p/606880884)
 
-[4] [zhihu - 《永劫无间》透光材质的渲染：器物之美，终归于心](https://zhuanlan.zhihu.com/p/410516470)
+[zhihu - 《永劫无间》透光材质的渲染：器物之美，终归于心](https://zhuanlan.zhihu.com/p/410516470)
 
 [5] [zhihu - 基于物理着色（四）- 次表面散射](https://zhuanlan.zhihu.com/p/21247702)
 

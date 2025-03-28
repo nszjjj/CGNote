@@ -1,5 +1,5 @@
 #URP
-## Intro
+# Intro
 
 > SRP 并不直接提供`ScriptableRenderer`，这是 URP 提供的。
 
@@ -15,7 +15,7 @@
 - AfterRendering
 
 在实际渲染的时候是调用`ExecuteBlock`执行每个 Block 下包含的 Pass。然后获取到该 Block 含有的 Pass 的 Index 范围，并依次为每个 Index 执行`ExecuteRenderPass`。
-## Detail
+# Detail
 
 `ScriptableRenderer`的派生类管理了一个相机的完整渲染流程。而一个相机的渲染自然分多个阶段，而那则是`ScriptableRenderPass`做的事情。
 
@@ -35,17 +35,51 @@
 - 相机与屏幕的内建变量的配置，例如`_WorldSpaceCameraPos`
 
 有必要指出的是，`ScriptableRenderer`和 Renderer 组件并非同一个东西。后者是附加在要被渲染的物体上的，而`ScriptableRenderer` 则是 URP 独有的和摄像机一一对应的。
-## ScriptableRendererData
+
+## Culling
+
+渲染一个相机的物体是要经过剔除的。SRP 的剔除参数要通过相机获取，而 URP 选择直接把他放在了`ScriptableRenderer`里，要求它自行实现，大意如下：
+
+```csharp
+// typeof(a) == Camera
+bool result = a.TryGetCullingParameters(out ScriptableCullingParameters cullingParameter);
+if(!result) // 对空情况要处理，可以不进行后续渲染
+// 实际的剔除通过 ScriptableRenderContext 进行
+CullingResults cullingResult = context.Cull(ref cullingParameter);
+```
+
+但是经过剔除的元素仅仅表示能够被摄像机看见，但是不代表有资格进入某个 pass。而最终的渲染对象还需要结合`FilteringSettings`和`DrawingSettings`进一步过滤和配置。
+
+## FilteringSettings
+
+上面说了经过剔除的元素不意味着有资格执行某个 Pass，因此还要进行进一步的过滤。
+
+`FilteringSettings`是专门给`ScriptableRenderContext.DrawRenderers`提供信息的结构体，他为进一步筛选那些物体可以参与渲染提供了要求。URP 在拿到 `CullingResults` 之后并未直接在`ScriptableRenderer`中做后续的处理，而是把相关的权限下放给了`ScriptableRenderPass`，由各个 Pass 自行决定要绘制哪些物体。
+
+`FilteringSettings`主要针对渲染队列的值和`LayerMask`对剔除结果做进一步限制。
+
+Tips：由于结构体的`Equals(object obj)`会产生装箱，`FilteringSettings`实现了`IEquatable<FilteringSettings>`，进而提供了更高效的比较。此外，通过实现`IEquatable<T>`还可以重新定义 class 的比较行为（原先是比较两个对象是否指向内存中的同一个地址）
+
+## DrawingSettings
+
+`DrawingSettings`的功能也很简洁：
+1. 指定使用哪个 Pass 进行绘制(可以指定多个 Pass 作为备选)
+2. 配置排序方式
+3. 设置 GPU Instancing 选项
+# ScriptableRendererData
 
 `ScriptableRendererData`是`ScriptableRenderer`的配置类，用于配置：
 
 - 使用的 `ScriptableRenderer` 类型（如 `ForwardRenderer`）
 - 启用的 Renderer Features
 - 渲染顺序和渲染目标设置
+
+# Further Understanding
+
 ## Comparison between Base and Derived Class
 
 > 前面对于功能的讨论总容易把基类`ScriptableRenderer`和派生类混淆，因此在这里讨论一下二者的功能划分
 
 基类把实现`abstract void ScriptableRenderer.Setup(ScriptableRenderContext, ref RenderingData)`交由了派生类，也就是说在`ForwardRenderer`中能看到具体的实现。这部分逻辑因为 URP 支持不同的渲染路径，他们的 Setup 逻辑不一致。
-## ForwardRenderer
+# ForwardRenderer
 

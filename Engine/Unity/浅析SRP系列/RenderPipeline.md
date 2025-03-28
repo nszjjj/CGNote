@@ -32,7 +32,7 @@
 - `ScriptableRenderPass`：实现具体的渲染任务（如阴影渲染、后处理等）
 - `RendererFeature`：向 `ScriptableRenderer` 中添加自定义的 `ScriptableRenderPass`
 
-自己做简单的 SRP 就算不实现`ScriptableRenderer`，对具体摄像机的渲染逻辑也会抽出来，因为不同类型的相机的用途和渲染需要准备的数据和渲染流程可能有所差异。在这篇文章$^{[7]}$中，`Renderer()`就是准备好每个相机的数据，然后为每个相机调用了自己实现的`RenderContent(bool, Camera, CullingResults, ScriptableRenderContext)`，但是即便这样，也是把对于相机的渲染抽象了出来。
+自己做简单的 SRP 就算不实现`ScriptableRenderer`，对具体摄像机的渲染逻辑也会抽出来，因为不同类型的相机的用途和渲染需要准备的数据和渲染流程可能有所差异。在底部引用的第一篇文章中，`Renderer()`就是准备好每个相机的数据，然后为每个相机调用了自己实现的`RenderContent(bool, Camera, CullingResults, ScriptableRenderContext)`，但是即便这样，也是把对于相机的渲染抽象了出来。
 
 ## SRP 中的细节
 
@@ -91,4 +91,7 @@ public class CustomRenderPipelineAsset : RenderPipelineAsset
 相当于把管线最终可调节的参数都放在了 Asset 里，这样能够集中管理、自定义参数、动态调整和持久化存储。
 
 因为创建管线的时候已经把 Asset 的配置传进来了，所以管线是可以获取到这些参数的。
- 
+
+# Reference
+
+[zhihu - Unity SRP 01](https://zhuanlan.zhihu.com/p/92686142)

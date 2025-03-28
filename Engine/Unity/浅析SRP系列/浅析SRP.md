@@ -109,11 +109,30 @@ context.DrawRenderers(renderingData.cullResults, ref forwardSettings, ref filter
 
 额外提一句：SubShader 或者 Pass 都可以有 Tags，但`LightMode` 只能用于 Pass 的 Tags。而`Render Queue` 只能用于`SubShader`的 Tags，其作用是定义整个 `SubShader` 的渲染顺序。SubShader 上的设置会影响到其中的 Pass，这意味着会间接影响具有同一种`LightMode`的 pass 中物体的渲染顺序。Unity 在获取到使用这些 Pass 的物体后会依据 Render Queue 的值排序再渲染。
 
-针对这个再额外提一句：一个 ShaderLab 文件中的多个 SubShader 通常是为了解决相同问题的不同实现方法，这些实现方法可能针对不同的硬件平台、性能需求或渲染管线进行优化。每个 SubShader 可以看作是同一渲染目标的不同版本。那自然存在多个 SubShade r都含有相同 LightMode 的 Pass，Unity 会去选择最为匹配的那个
+针对这个再额外提一句：一个 ShaderLab 文件中的多个 SubShader 通常是为了解决相同问题的不同实现方法，这些实现方法可能针对不同的硬件平台、性能需求或渲染管线进行优化。每个 SubShader 可以看作是同一渲染目标的不同版本。那自然存在多个 SubShader 都含有相同 LightMode 的 Pass，Unity 会去选择最为匹配的那个
+## Render Object Ways
 
----
+上一小节中使用了`DrawRenderers`来进行物体的渲染。如无特殊处理的正常流程都是使用该方法进行绘制。
 
-当然，渲染物体的方式不止这一种。
+```csharp
+public void DrawRenderers(
+    CullingResults cullingResults,
+    ref DrawingSettings drawingSettings,
+    ref FilteringSettings filteringSettings
+);
+```
+
+`CullingResults`包含了所有初步剔除测试的 Renderer，而在`FilteringSettings`中则进一步地过滤要绘制的渲染器
+
+在`DrawingSettings`中确定了使用哪个 Pass、如何排序、是否启用批处理等重要行为
+
+其他需求：
+- GPU 生成内容 → `DrawProcedural`
+- 全屏/UI → `DrawMesh`
+- 强制渲染单个物体 → `DrawRenderer`
+- 阴影 → `DrawShadows`
+- 调试 (Unity 2022+) → `DrawPrimitives`
+- 天空盒 → `DrawSkybox`
 ## SRP Batcher
 
 SRP Batcher 也是 SRP 中不得不品的一个机制，其核心目标是通过减少CPU与GPU之间的通信开销，提升渲染性能。其中的关键因素在于状态切换为 CPU 和 GPU 双侧带来的开销。本质上不会减少绘制调用，但是为了易于开发人员理解所以编辑器上显示减少

@@ -1,0 +1,1 @@
+[zhihu - 【笔记】Unity内存分配和回收的底层原理](https://zhuanlan.zhihu.com/p/381859536)

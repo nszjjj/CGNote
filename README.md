@@ -29,12 +29,12 @@
 
 长期：
 
-- 阅读完RTR4
+- 阅读完 RTR4
 - 深入研究 shader 逆向
-
 ## 未归档的学习资源
 
-我先把未归档的东西记在这：
+我先把未归档的东西记在这里
+### TA
 
 [samlee的秘密TA笔记.docx](https://www.kdocs.cn/l/cbSqBT9pOXH5)
 
@@ -48,8 +48,29 @@
 
 [想转行游戏技术美术（TA），base上海，目前已经做了一些准备，请问接下来如何努力才能达到从业要求呢？ - 山治的回答 - 知乎](https://www.zhihu.com/question/515586039/answer/2356931883)
 
+### Unity
+
+[Unity技能职级体系v1.2](https://www.kdocs.cn/l/ckZwCkM9kIZf)
+
+### UE
+
+[cnblogs - 剖析虚幻渲染体系-开篇说明](https://www.cnblogs.com/timlly/p/13512787.html)
 ### Tutorials
 
 [CS468 -  Geometry Processing Algorithms](http://graphics.stanford.edu/courses/cs468-12-spring/)
 
 CUDA入门：《massively parallel processors》+ CS344 - Intro to Parallel Programming
+
+### 电子书
+
+[Real-Time Rendering 4th](https://www.wolai.com/fkGSwxLu2pjWD7kiBY1V7W)：电子书，神作无需多言
+[游戏编程模式](https://gpp.tkchu.me/)：电子书（之前还花钱买了，哭死）
+[Nvidia - GPU Gems](https://developer.nvidia.com/gpugems/gpugems/contributors)：GPU 精粹官方电子版（第二部第三部也在这个页面上能找到）
+[《音视频开发技术：原理与实践》](https://arikanli.cyberfederal.io/)：电子书
+[BEN CLOWARD - BOOK RECOMMENDATIONS](https://www.bencloward.com/resources_books.shtml)：关于 Shader 相关的书单（虽然书目有些古老了）
+
+### 博客
+
+[BlessingCR’s Blog](https://blessingcr.com/)：主要讲 java 应用的，涵盖方案设计、分布式、Spring、Redis等
+
+[Inigo Quilez](https://iquilezles.org/)：有涵盖图形学、分形、数学等内容的文章，一些代码片段和该作者的 YouTube 视频教程
