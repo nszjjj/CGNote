@@ -2,6 +2,8 @@
 
 ## Basic Concepts
 
+`Configure()`函数在 Pass 执行前被调用，用于配置 RenderTarget 或者分配 TemporalRT。
+
 对外提供的是`Excute`函数，`ScriptableRenderer`会根据 Pass 的排序值依次调用各 pass 的`Excute`。
 
 虽然带个 Pass，其实这个东西和着色器的 Pass 不是一个概念。
@@ -25,6 +27,7 @@
 | `DrawSkyboxPass`            | 渲染天空盒                            |
 | `MainLightShadowCasterPass` | 处理主光源的阴影投射                       |
 | `ScreenSpaceShadowPass`     | 计算屏幕空间阴影                         |
+
 显然，一个绘制步骤可能会用到多个 Shader，这显然也表明一个绘制步骤可能由多个 Shader Pass 构成。相比之下，Shader Pass 仅仅完成了一次渲染过程（由顶点数据到最终写入渲染目标的过程）。
 
 ## Why Need ScriptableRenderPass
@@ -54,5 +57,35 @@ var drawingSettings = new DrawingSettings(
     sortingSettings
 );
 ```
+
+# Deep Understand
+
+## Pass Execution Order
+
+直接上示意图吧：
+
+```
+Frame Rendering
+│
+├── ScriptableRenderPass 1 (e.g., ShadowPass)
+│   ├── Draw Object A (ShadowCaster Pass)
+│   ├── Draw Object B (ShadowCaster Pass)
+│   └── ...
+│
+├── ScriptableRenderPass 2 (e.g., OpaquePass)
+│   ├── Draw Object B (UniversalForward Pass, Queue=2000)
+│   ├── Draw Object A (UniversalForward Pass, Queue=2001)
+│   └── ...
+│
+└── ScriptableRenderPass 3 (e.g., OutlinePass)
+    ├── Draw Object A (Outline Pass)
+    └── ...
+```
+
+首先是逐 Pass 执行的，一个 Pass 执行完才会执行下一个 Pass。认为一个物体绘制完所有 Pass 才会进行下一个物体的绘制是错误的。
+
+Pass 内部会通过上文说的`DrawingSettings` 和 `FilteringSettings`机制选择自己要处理的物体，因为不是所有物体都参与绘制。
+
+筛选好要绘制的物体之后，需要依据`RenderQueue`的大小顺序由小到大进行绘制。
 # Reference
 [Tech-Artist 学习笔记：URP 中比 RendererFeature 更灵活的自定义 Pass 插入小技巧](https://zhuanlan.zhihu.com/p/550948454)

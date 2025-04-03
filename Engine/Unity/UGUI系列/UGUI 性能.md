@@ -1,6 +1,6 @@
 ## Canvas Rebuild
 
-Canvas Rebuild 是 UGUI 
+Canvas Rebuild 是影响 UGUI 性能的关键因素。
 
 # Reference
 

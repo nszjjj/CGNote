@@ -92,6 +92,17 @@ public class CustomRenderPipelineAsset : RenderPipelineAsset
 
 因为创建管线的时候已经把 Asset 的配置传进来了，所以管线是可以获取到这些参数的。
 
+# Universal Render Logic
+
+本节主要讨论一般来讲较为通用的渲染逻辑是怎样的
+
+## Render()
+
+其实这个`ScriptableRenderer`倒不一定非得存在，如果管线确实简单的话，直接`foreach (var camera in cameras)`执行各个 Pass 就可以了。不过这样的管线就显得较为固定，因为各个原子性的渲染阶段被固定好了。
+
+## Error Detection
+
+完整的管线也需要有错误检测，对于出于某些原因无法绘制的材质，应当使用专门的错误材质进行绘制（对，就是那个经典的品红色材质）
 # Reference
 
 [zhihu - Unity SRP 01](https://zhuanlan.zhihu.com/p/92686142)

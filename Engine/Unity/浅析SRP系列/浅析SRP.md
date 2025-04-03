@@ -143,8 +143,8 @@ SRP Batcher 也是 SRP 中不得不品的一个机制，其核心目标是通过
 
 具体来说，着色器用到的属性分为两种：内置引擎属性和材质属性。为了能兼容 SRP 必须将他们都标记出来以便正确识别和处理。
 
-- 内置引擎属性不需要开发者手动处理，Unity 引擎会自动将它们放在名为 `UnityPerDraw` 的 CBUFFER 中。
-- 材质属性需要开发者手动将它们放在名为`UnityPerMaterial`的 CBUFFER（Constant Buffer）中
+- 内置引擎属性不需要开发者手动处理，Unity 引擎会自动将它们放在预先准备好的 CBUFFER 中，例如`UnityPerDraw`、`UnityPerFrame`
+- 材质属性需要开发者手动将它们放在名为`UnityPerMaterial`的 CBUFFER 中
 
 类似使用方式如下所示：
 
@@ -165,12 +165,11 @@ Pass
 
 额外地，内置引擎属性也分两类，分别是 Per-Object 属性和全局属性。Per-Object 属性是每个 GameObject 独有的；全局属性是整个场景或渲染管线共享的，它们在不同的材质实例之间通常不会发生变化。
 
-再额外地，`CBUFFER`并非只有`UnityPerMaterial`，还有`UnityPerDraw`或`UnityPerFrame`等，可以在 URP 的包里的`./ShaderLibrary/UnityInput.hlsl`里找到不同的 CBUFFER 及其内容。材质 Inspector 面板中设置的属性通常都属于`UnityPerMaterial`。
+URP 预定义的 CBUFFER，`UnityPerMaterial`，还有`UnityPerDraw`或`UnityPerFrame`这些或其他未提到的，可以在 URP 的包里的`./ShaderLibrary/UnityInput.hlsl`里找到相关定义。材质 Inspector 面板中设置的属性通常都属于`UnityPerMaterial`。
 
-Unity 对于不同类型的 CBUFFER 的对待方式是不一样的，他们的更新频率和时机、在显存中的位置都不尽相同。例如`UnityPerDraw`在绘制物体变化的时候就会更新，但是`UnityPerMaterial`在材质属性变化的时候才会更新
+不同的 CBUFFER 更新频率和时机、在显存中的位置都不尽相同。例如`UnityPerDraw`在绘制物体变化的时候就会更新，但是`UnityPerMaterial`在材质属性变化的时候才会更新。CBUFFER 在显存中存放策略为“动静分离”，Material CBUFFER 大部分情况下更新频率并不高，因此会独立（每个材质实例一份）放在静态区域，而 Per-Object 的参数更新较为频繁，会单独放在一块（通过偏移量访问）动态区域便于更新。
 
-材质属性可以不使用`CBUFFER_START(UnityPerMaterial)`，那样的话会作为独立的 Uniform 变量传递给着色器。    
-
+材质属性可以不使用`CBUFFER_START(UnityPerMaterial)`，那样的话会作为独立的 Uniform 变量传递给着色器，但是这样就无法使用 SRP Batcher。
 # SRP Package
 
 ## Core RP

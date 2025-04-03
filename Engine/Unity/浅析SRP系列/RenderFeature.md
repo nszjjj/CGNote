@@ -1,5 +1,5 @@
 #URP 
-## Intro
+# Intro
 
 `ScriptableRendererFeature`是 URP 独有的机制，用于向 URP 的渲染流程中添加自定义 `ScriptableRenderPass`。它通过 `ScriptableRendererFeature.AddRenderPasses` 方法将 `ScriptableRenderPass` 添加到 `ScriptableRenderer` 中。
 
@@ -12,9 +12,51 @@
 
 <img title="" src="./img/RenderFeature.png" alt="阴影自遮挡效果示意" data-align="center">
 
-具体的逻辑则在`AddRenderPasses`中完成，此方法在
+具体的逻辑则在`AddRenderPasses`中完成，此方法将一个或多个`ScriptableRendererPass`插入到到渲染队列中
 
-## Example : SSAO
+## Enqueue 机制
+
+首先是`RenderFeature`的获取，源自`ScriptableRenderer`的构造函数：
+
+```csharp
+public ScriptableRenderer(ScriptableRendererData data)
+{
+	// ...
+	foreach (var feature in data.rendererFeatures)
+	{
+		if (feature == null)
+			continue;
+			
+		feature.Create();
+		m_RendererFeatures.Add(feature);
+	}
+	// ...other code
+}
+```
+
+已知队列是个`List<ScriptableRenderPass>`。然后在`Setup()`就该入队的就入队了。但是那是 URP 已准备的 Pass 的入队。`RenderFeature`的 Pass 的入队发生在这里：
+
+```csharp
+for (int i = 0; i < rendererFeatures.Count; ++i)
+{
+	if (!rendererFeatures[i].isActive)
+	{
+		continue;
+	}
+	rendererFeatures[i].AddRenderPasses(this, ref renderingData);
+}
+```
+
+这个会在`Setup()`添加所有 pass 最前面进行。
+
+然后`ScriptableRenderer`里实现了`SortStable(List<ScriptableRenderPass>)`，在这里实现了稳定插入排序。因为`ScriptableRenderPass`是重载了比较运算符的，所以这里直接就可以拿来比。它在`ScriptableRenderer.Execute()`时被调用。
+
+总体说来就是每帧先添加自定义 pass，在添加 URP 内置 Pass，然后再实际渲染的时候排序，按顺序执行。
+## Acquire Texture
+
+写 RenderFeature 是绕不开 RenderTarget 的获取的，因此在这里整理一下。
+
+# Example : SSAO
 
 URP 内置的 SSAO 效果作为一个 RenderFeature 是一个很好理解这个机制的参考。
 
@@ -56,11 +98,7 @@ Q&A：
 
 为什么不用`Graphics.Blit`？因为他是 Built-in RP 的 API，URP 中推荐用 `DrawMesh + fullscreenMesh`，因为它更透明可控（例如可以修改顶点数据）。
 
-## Acquire Texture
-
-写 RenderFeature 是绕不开 RenderTarget 的获取的，因此在这里整理一下。
-
-## 性能注意事项
+# 性能注意事项
 
 1. 避免每帧创建 Material，即避免在`Excute()`中动态生成，而是预先创建好复用
 2. 避免使用过多 Pass，在合理的时机可以使用 Compute Shader
