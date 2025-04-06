@@ -371,6 +371,7 @@ $$
 | ------------- | ------------ | -------------------- | ----------------------------------- |
 | **0（非金属）**    | 存在           | 弱反射（F0≈4%，如塑料）       | 光线部分反射，其余进入材质内部散射（次表面散射），形成漫反射颜色。   |
 | **1（金属）**     | 不存在          | 强反射（F0=BaseColor，如金） | 自由电子立即反射几乎所有光，无次表面散射，漫反射能量趋近于0（黑色）。 |
+
 虽然它看起来是一个`bool`值，但是实际引擎允许中间值（如0.3、0.7）的存在。对此引擎采取混合策略
 
 ```csharp
@@ -408,6 +409,7 @@ Linearly Transformed Cosines(LTC) 是一种用于实时渲染中高效计算复�
 $$
 \begin{aligned} L\left(\omega_{o}\right) &=L_{i} \cdot \int_{P} F\left(\omega_{i}\right) \mathrm{d} \omega_{i} \\ &=L_{i} \cdot \int_{P} \cos \left(\omega_{i}^{\prime}\right) \mathrm{d} \frac{M \omega_{i}^{\prime}}{\left\|M \omega_{i}^{\prime}\right\|} \\ &=L_{i} \cdot \int_{P^{\prime}} \cos \left(\omega_{i}^{\prime}\right) J \mathrm{~d} \omega_{i}^{\prime} \end{aligned}
 $$
+
 注意：
 1. 它是把整个$f·\cos$经过变换换成了$\cos\omega_i'$，而不是仅仅变换$f$
 2. $J$ 项是雅可比行列式（Jacobian Determinant）
@@ -474,6 +476,7 @@ Disney Principled BRDF 的理念或者说原则一般是这样的：
 ## Further Reading
 
 [Disney Principled BRDF实现笔记](https://airguanz.github.io/articles/2019.02.20.Disney-BRDF)
+
 [PBR-White-Paper/content/part 3/README.md at master · QianMo/PBR-White-Paper](https://github.com/QianMo/PBR-White-Paper/blob/master/content/part%203/README.md)
 # Non-Photorealistic Rendering
 
