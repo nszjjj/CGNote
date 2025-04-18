@@ -87,5 +87,14 @@ Frame Rendering
 Pass 内部会通过上文说的`DrawingSettings` 和 `FilteringSettings`机制选择自己要处理的物体，因为不是所有物体都参与绘制。
 
 筛选好要绘制的物体之后，需要依据`RenderQueue`的大小顺序由小到大进行绘制。
+
+## Inheritance
+
+虽然是由 ScriptableRenderPass，但是实际上 URP 还是进一步继承自它实现了多种子类，比如说：
+- RenderObjectsPass
+- DrawSkyboxPass
+- PostProcessPass
+
+这样的派生类主要是为了提供更高级别的抽象和常用功能的封装。
 # Reference
 [Tech-Artist 学习笔记：URP 中比 RendererFeature 更灵活的自定义 Pass 插入小技巧](https://zhuanlan.zhihu.com/p/550948454)

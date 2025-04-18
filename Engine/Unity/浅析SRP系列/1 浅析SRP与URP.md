@@ -31,7 +31,7 @@ URP 认为 RenderPipeline 核心的工作就是启动各个相机的渲染，因
 
 对与一个相机的渲染显然是分多个阶段的，例如对于不透明的物体肯定先于透明物体的渲染，因此将不同的渲染阶段封装为不同的 Pass。但是在 Pass 之上，URP 还有一个名为`RenderPassBlock`的概念，这主要是确立了更为宏观的渲染阶段，并提供了一些事件的插入时机。
 
-关于具体各个 Pass 的渲染，`ScriptableRenderer`依照相关渲染设置维护一个容纳了待渲染的 Pass 的队列（其实就是个 List），实际执行的时候是通过`ExecuteBlock`渲染单个 Block，在其中会获取到属于这个 Block 的 Pass 的 index，并从队列中拿出来渲染。
+关于具体各个 Pass 的渲染，`ScriptableRenderer`依照相关渲染设置维护一个容纳了待渲染的 Pass 的队列（其实就是个 List），实际执行的时候是通过`ExecuteBlock`渲染单个 Block，在其中会获取到属于这个 Block 的 Pass 的 index，并从队列中拿出来渲染。这里涉及到 Pass 的注入，见后文 [[#Render Pass Injection]] 部分的内容。
 
 当然，贯穿上述整个调用链，各种用于监测性能的`ProfilingScope`也穿插在其中。
 
@@ -170,18 +170,21 @@ URP 预定义的 CBUFFER，`UnityPerMaterial`，还有`UnityPerDraw`或`UnityPer
 不同的 CBUFFER 更新频率和时机、在显存中的位置都不尽相同。例如`UnityPerDraw`在绘制物体变化的时候就会更新，但是`UnityPerMaterial`在材质属性变化的时候才会更新。CBUFFER 在显存中存放策略为“动静分离”，Material CBUFFER 大部分情况下更新频率并不高，因此会独立（每个材质实例一份）放在静态区域，而 Per-Object 的参数更新较为频繁，会单独放在一块（通过偏移量访问）动态区域便于更新。
 
 材质属性可以不使用`CBUFFER_START(UnityPerMaterial)`，那样的话会作为独立的 Uniform 变量传递给着色器，但是这样就无法使用 SRP Batcher。
-# SRP Package
 
-## Core RP
+## Render Pass Injection
 
-SRP 依赖 Core RP Package，可以在包管理中找到并安装。由于 URP 和HDRP都是依赖于 SRP 构建的，因此在 URP 或者 HDRP 管线的工程中也会包含这个包。
+省流（两种方法）：
 
-通常，使用一个 Pipeline Asset（一种 ScriptableObject，它包含了渲染管线的配置和设置）来描述一个 SRP
+- Scriptable Renderer Feature
+- RenderPipelineManager API
 
-## Forward SRP
+---
 
-## Deferred SRP
+实现了 ScriptableRenderPass 之后是要注入进 URP 的管线中才能被执行的。一般来说是通过 RenderFeature 在每帧开头注册；不过也可以通过事件进行注册，这种方式则是在事件被触发的时候注册 Pass，参阅：[Unity Documentation - Inject a render pass via scripting in URP](https://docs.unity3d.com/6000.1/Documentation/Manual/urp/customize/inject-render-pass-via-script.html)
 
+大致意思就是在特定的节点会有事件触发，只要将方法订阅到事件，就能在事件被触发的时候进行注册。这些事件的访问点统一由`RenderPipelineManager`提供，可以在下述链接查到：[Unity Documentation - RenderPipelineManager](https://docs.unity3d.com/ScriptReference/Rendering.RenderPipelineManager.html)
+
+相当于就是写了一个函数订阅这个事件，由于函数是自行实现的，就可以自己灵活控制注册行为，可以做到只在固定情况下注册 Pass，而非每帧都注册（虽然事件可能是每帧都会派发的）
 # 参考
 
 [zhihu - 【Unity】SRP底层渲染流程及原理](https://zhuanlan.zhihu.com/p/378781638)

@@ -120,11 +120,22 @@ context.DrawRenderers(cullResults, ref drawingSettings, ref filteringSettings);
 - 使用的 `ScriptableRenderer` 类型（如 `ForwardRenderer`）
 - 启用的 Renderer Features
 - 渲染顺序和渲染目标设置
-# Further Understanding
+# Derived Class Implementation
+
+URP 基于`ScriptableRenderer`提供了多种实现，当然
 ## Comparison between Base and Derived Class
 
 > 前面对于功能的讨论总容易把基类`ScriptableRenderer`和派生类混淆，因此在这里讨论一下二者的功能划分
 
 基类把实现`abstract void ScriptableRenderer.Setup(ScriptableRenderContext, ref RenderingData)`交由了派生类，也就是说在`ForwardRenderer`中能看到具体的实现。这部分逻辑因为 URP 支持不同的渲染路径，他们的`Setup()`逻辑不一致。这个函数具体的实现了各个 Pass 进行`EnqueuePass`的顺序（即执行顺序）
-# ForwardRenderer
 
+## ForwardRenderer
+
+在较新版本的 URP 中，ForwardRenderer 已经被弃用，取而代之的是 UniversalRenderer
+## UniversalRenderer
+
+UniversalRenderer 作为 URP 的标准渲染器实现，支持前向渲染路径，内置2D渲染支持，具有处理光照、阴影、后处理等核心功能，以及可扩展的RenderPass系统。
+
+## DeferredRenderer
+
+DeferredRenderer 是一种实验性渲染器，实现了延迟渲染路径，

@@ -2,14 +2,18 @@
 
 ## 目录（已/正在更新内容）
 
+- Advanced Shading and Materials
+	- Cloth Shading
 - Engine
     - Architecture
         - 开源项目 MP-APS 解读
     - Filament
         - 引擎结构
         - ※PBR 技术
+	        - 布料渲染：[[4.12 Cloth model 翻译与总结]]
     - Unity
-        - SRP原理梳理
+        - SRP原理梳理：[[1 浅析SRP与URP]]
+        - RenderGraph 介绍：[[RenderGraph]]
 - Games 202：课程涉及到的全部内容
 - Graphics API
     - OpenGL 的概念梳理
@@ -36,7 +40,6 @@
 
 短期：
 
-- 把之前 LearnOpenGL 笔记搬运至此并重写纠正一些错误
 - 补充完 games202 笔记
 - 翻译 Filament 的 PBR 手册（如果找到中译版就仅记录一下阅读笔记）
 - 补充多种 Shader 效果的拆分思路
