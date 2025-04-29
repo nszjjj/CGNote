@@ -79,7 +79,13 @@ using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var
 UniversalResourceData frameData = frameContext.Get<UniversalResourceData>();
 ```
 
-不过需要注意的是有些数据可能还没计算出来
+不过需要注意的是有些数据在获取的时候可能还没计算出来（生命周期还未开始，一些数据的生命周期并不是贯穿整个管线的）
+
+每个 Pass 通过派生自`ContextItem`的类定义其用到的数据，定义用到的数据。`ContextItem`是 URP 渲染管线中用于在不同渲染通道(pass)之间共享数据的容器对象，其数据只在当前帧有效（对，它是有`Reset()`方法的，会在下次用到的时候重置，以复用对象）
+
+
+
+---
 
 ScriptableRenderPass 可以指定自己需要的一些输入，Unity 会添加相关产生这些数据的 Pass 或者重新利用先前帧的数据，这些输入使用位枚举表示：
 
@@ -88,7 +94,31 @@ ScriptableRenderPass 可以指定自己需要的一些输入，Unity 会添加�
 public enum ScriptableRenderPassInput
 ```
 
-然后通过`ConfigureInput`进行确认，完成对 Pass 所需要访问的渲染管线资源的声明
+然后通过`ConfigureInput`进行确认，完成对 Pass 所需要访问的渲染管线资源的声明。需要在`AddRenderPasses`内调用，例如：
+
+```csharp
+public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+{
+	// ...
+    renderer.EnqueuePass(myCustomPass);
+    myCustomPass.ConfigureInput(ScriptableRenderPassInput.Depth);
+    myCustomPass.ConfigureInput(ScriptableRenderPassInput.Normal);
+    // ...
+}
+```
 ## IRasterRenderGraphBuilder
 
 上面的 builder 变量是`IRasterRenderGraphBuilder`接口的一个实例，作为配置渲染过程相关信息的入口点
+
+## Transfer a texture between render passes in URP
+
+RenderGraph 存在的时候，数据的流动要符合规范，一个 Pass 能获取到的 Texture有两种：
+
+- Texture 属于 FrameData
+- Texture 是全局的
+
+这也即是在 Pass 之间流转数据的方式
+
+## Example
+
+[Unity Documentation - Import a package sample in URP](https://docs.unity3d.com/6000.1/Documentation/Manual/urp/package-samples.html)
