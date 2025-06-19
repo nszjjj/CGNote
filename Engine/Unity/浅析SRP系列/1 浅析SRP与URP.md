@@ -185,6 +185,17 @@ URP 预定义的 CBUFFER，`UnityPerMaterial`，还有`UnityPerDraw`或`UnityPer
 大致意思就是在特定的节点会有事件触发，只要将方法订阅到事件，就能在事件被触发的时候进行注册。这些事件的访问点统一由`RenderPipelineManager`提供，可以在下述链接查到：[Unity Documentation - RenderPipelineManager](https://docs.unity3d.com/ScriptReference/Rendering.RenderPipelineManager.html)
 
 相当于就是写了一个函数订阅这个事件，由于函数是自行实现的，就可以自己灵活控制注册行为，可以做到只在固定情况下注册 Pass，而非每帧都注册（虽然事件可能是每帧都会派发的）
+
+# 实践
+
+参考知乎文章：
+
+[zhihu - Unity SRP 01](https://zhuanlan.zhihu.com/p/92686142)
+[zhihu - Unity SRP 02](https://zhuanlan.zhihu.com/p/101180350)：这篇主要涉及 SRP with RenderGraph
+
+CatLikeCoding的SRP系列：
+
+[CatLikeCoding - Custom Render Pipeline : Taking Control of Rendering](https://catlikecoding.com/unity/tutorials/custom-srp/custom-render-pipeline/)
 # 参考
 
 [zhihu - 【Unity】SRP底层渲染流程及原理](https://zhuanlan.zhihu.com/p/378781638)
